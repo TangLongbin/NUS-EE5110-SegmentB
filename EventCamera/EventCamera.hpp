@@ -19,6 +19,7 @@ public:
 
     // Method to process the video and generate events
     void processVideo();
+    void setSaveEvents(bool save);
 
 private:
     std::string videoFilePath;       // Path to the input video file
@@ -29,21 +30,12 @@ private:
     std::ofstream eventFile;         // File stream for the event data file
     float threshold;                 // Threshold for detecting events
     double event_fps;                   // Frames per second of the video
+    bool saveEvents = false;                 // Flag to save events to file
 };
 
 // Constructor implementation
 EventCamera::EventCamera(const std::string& videoFilePath, const std::string& outputVideoPath, const std::string& eventDataPath, float threshold)
     : videoFilePath(videoFilePath), outputVideoPath(outputVideoPath), eventDataPath(eventDataPath), threshold(threshold) {
-    if (!openVideo(videoFilePath)) {
-        throw std::runtime_error("Unable to open video file: " + videoFilePath);
-    }
-    // Open event data file
-    eventFile.open(eventDataPath);
-    if (!eventFile.is_open()) {
-        std::cout << "Unable to create event data file!" << std::endl;
-        return;
-    }
-    frameSize = getResolution();
     event_fps = getFPS(); // Default frame rate
 }
 
@@ -83,6 +75,17 @@ double EventCamera::getEventFPS() const {
 
 // Method to process the video and generate events
 void EventCamera::processVideo() {
+    if (!openVideo(videoFilePath)) {
+        throw std::runtime_error("Unable to open video file: " + videoFilePath);
+    }
+    // Open event data file
+    eventFile.open(eventDataPath);
+    if (!eventFile.is_open()) {
+        std::cout << "Unable to create event data file!" << std::endl;
+        return;
+    }
+    frameSize = getResolution();
+
     // Define original visualization window
     cv::namedWindow("Original Frames", cv::WINDOW_NORMAL);
 
@@ -90,7 +93,14 @@ void EventCamera::processVideo() {
     cv::namedWindow("Simulated Events", cv::WINDOW_NORMAL);
 
     // Open the output video file
-    outputVideo.open(outputVideoPath, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), event_fps, frameSize);
+    if (outputVideoPath.substr(outputVideoPath.find_last_of(".") + 1) == "mp4") {
+        outputVideo.open(outputVideoPath, cv::VideoWriter::fourcc('H', '2', '6', '4'), event_fps, frameSize); // mp4 format
+    } else if (outputVideoPath.substr(outputVideoPath.find_last_of(".") + 1) == "avi") {
+        outputVideo.open(outputVideoPath, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), event_fps, frameSize); // avi format
+    } else {
+        std::cout << "Unsupported video format!" << std::endl;
+        return;
+    }
 
     if (!outputVideo.isOpened()) {
         std::cout << "Unable to create output video file!" << std::endl;
@@ -138,12 +148,14 @@ void EventCamera::processVideo() {
             // Calculate the time of the current frame (seconds)
             double frameTime = static_cast<double>(frameIndex) / event_fps;
 
-            // // Write event data to file
-            // for (const auto& point : eventPoints) {
-            //     int eventValue = eventImage.at<cv::Vec3b>(point)[2] == 255 ? 1 : -1;
-            //     eventFile << frameTime << "," << point.x << "," << point.y << eventValue << "\n";
-            // }
-
+            // Write event data to file
+            if(saveEvents){
+                for (const auto& point : eventPoints) {
+                    int eventValue = eventImage.at<cv::Vec3b>(point)[2] == 255 ? 1 : -1;
+                    eventFile << frameTime << "," << point.x << "," << point.y << eventValue << "\n";
+                }
+            }
+            
             // Display event image
             cv::imshow("Simulated Events", eventImage);
             // int delayTime = static_cast<int>(1000 / event_fps);
@@ -165,6 +177,10 @@ void EventCamera::processVideo() {
         std::cout << "Unknown exception occurred" << std::endl;
     }
     
+}
+
+void EventCamera::setSaveEvents(bool save) {
+    saveEvents = save;
 }
 
 #endif // EVENT_CAMERA_HPP

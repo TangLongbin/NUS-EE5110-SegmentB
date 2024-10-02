@@ -18,8 +18,25 @@ int main(int argc, char** argv) {
     float threshold = 10.0; // Example threshold value
     float event_fps = 300.0; // Example fps value
 
+    // float fx = 1.0, fy = 1.0;
+    // float cx = 0.0, cy = 0.0;
+    // cv::Mat intrinsic = (cv::Mat_<double>(3, 3) << fx, 0, cx, 0, fy, cy, 0, 0, 1);
+    // float k1 = 0.01, k2 = 0.01, p1 = 0.0, p2 = 0.0, k3 = 0.0;
+    // cv::Mat distortion = (cv::Mat_<double>(5, 1) << k1, k2, p1, p2, k3);
+
     EventCamera eventCamera(videoPath, outputPath, eventDataPath, threshold);
+    eventCamera.setUseCameraDevice(false);
+
+
+    // eventCamera.SetIntrinsicParameters(intrinsic);
+    // eventCamera.SetDistortionCoefficients(distortion);
+    eventCamera.SetRotationMatrix(cv::Mat::eye(3, 3, CV_64F));
+    eventCamera.SetTranslationVector(cv::Mat::zeros(3, 1, CV_64F));
+
     eventCamera.setEventFPS(event_fps);
+    eventCamera.setSaveEvents(false);
+
+
     eventCamera.processVideo();
 
     return 0;

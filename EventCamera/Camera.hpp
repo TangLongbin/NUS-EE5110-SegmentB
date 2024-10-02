@@ -25,6 +25,7 @@ private:
     VideoCapture videoCapture;
     Size resolution;
     double fps; // Add a member variable to store the frame rate
+    bool useCameraDevice;
 
 public:
     Camera(const Mat& intrinsic, const Mat& distortion, const Mat& rotation, const Mat& translation);
@@ -38,6 +39,7 @@ public:
     Size getResolution() const; // Gets the resolution of the video.
     double getFPS() const; // Gets the frame rate of the video.
     bool ReadFrameAndUndistort(Mat& undistortedFrame); // Gets the next frame from the video, undistorts it, and returns the undistorted frame.
+    void setUseCameraDevice(bool useCamera); // Sets the flag to use the camera device.
 };
 
 /**
@@ -56,6 +58,7 @@ Camera::Camera(const Mat& intrinsic = Mat::eye(3, 3, CV_64F),
     distortionCoefficients = distortion;
     rotationMatrix = rotation;
     translationVector = translation;
+    useCameraDevice = false;
 }
 
 /**
@@ -120,8 +123,11 @@ void Camera::SetTranslationVector(const Mat& translation){
  * @return True if the video file was successfully opened, false otherwise.
  */
 bool Camera::openVideo(const string& filePath) {
-    videoCapture.open(filePath);
-    // videoCapture.open(0); // Use camera device
+    if(useCameraDevice){
+        videoCapture.open(0); // Use camera device
+    } else {
+        videoCapture.open(filePath);
+    }
     if (!videoCapture.isOpened()) {
         cerr << "Error: Could not open video file." << endl;
         return false;
@@ -170,4 +176,12 @@ bool Camera::ReadFrameAndUndistort(Mat& undistortedFrame) {
     return false;
 }
 
+/**
+ * @brief Sets the flag to use the camera device.
+ * 
+ * @param useCamera True to use the camera device, false otherwise.
+ */
+void Camera::setUseCameraDevice(bool useCamera){
+    useCameraDevice = useCamera;
+}
 #endif // CAMERA_HPP
