@@ -7,7 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <iostream> // 引入输入输出库
+#include <iostream> // Include input/output library
 
 struct Event {
     int x;
@@ -24,10 +24,10 @@ QtWidgetsApplication3::QtWidgetsApplication3(QWidget *parent)
     player1 = new QMediaPlayer(this);
     player2 = new QMediaPlayer(this);
 
-    // 将播放器与视频部件关联
+    // Associate the player with the video widget
     player1->setVideoOutput(ui.videoWidget1);
     player2->setVideoOutput(ui.videoWidget2);
-    // 连接信号和槽
+    // Connect signals and slots
     connect(ui.pushButtonStart, &QPushButton::clicked, this, &QtWidgetsApplication3::onStartClicked);
     connect(ui.pushButtonStart_2, &QPushButton::clicked, this, &QtWidgetsApplication3::onStartClicked2);
     connect(ui.pushButtonBrowse, &QLineEdit::textChanged, this, &QtWidgetsApplication3::onLineEditTextChanged);
@@ -37,14 +37,11 @@ QtWidgetsApplication3::~QtWidgetsApplication3()
 {}
 
 void QtWidgetsApplication3::onLineEditTextChanged() {
-     lineText = ui.pushButtonBrowse->text();//qstring
+     lineText = ui.pushButtonBrowse->text(); // qstring
   //  lineText.append("gg");
-    
-    
 }
 
 void QtWidgetsApplication3::onStartClicked2() {
-
     fileName_output = QFileDialog::getOpenFileName(this, tr("choose"), "", tr("choose ()"));
 }
 
@@ -53,12 +50,11 @@ void QtWidgetsApplication3::onStartClicked()
     // ui.pushButtonBrowse->setText(lineText);
     QString fileName = QFileDialog::getOpenFileName(this, tr("choose"), "", tr("choose (*.mp4 *.avi *.mkv)"));
 
-
     //fileName = ui.pushButtonBrowse->text();
     //  QString fileName = "D:/test.mp4";
   //  if (fileName.isEmpty())
   //  {
-  //      QMessageBox::warning(this, tr("错误"), tr("请先选择视频文件！"));
+  //      QMessageBox::warning(this, tr("Error"), tr("Please select a video file first!"));
    //     return;
  //   }
     /*
@@ -74,97 +70,93 @@ void QtWidgetsApplication3::onStartClicked()
     cv::VideoCapture cap(str);
 
     ui.pushButtonBrowse->setText("0");
-    // 获取视频属性
+    // Get video properties
     int width = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
     int height = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
     int fps = static_cast<int>(cap.get(cv::CAP_PROP_FPS));
 
-    // 定义事件可视化窗口
+    // Define event visualization window
     cv::namedWindow("Simulated Events", cv::WINDOW_NORMAL);
 
-    // 定义视频写入对象
+    // Define video writer object
     cv::VideoWriter outputVideo;
     cv::Size frameSize(width, height);
     outputVideo.open("SimulatedEventsOutput.avi", cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), fps, frameSize, false);
 
-
-
-    // 打开事件数据文件
+    // Open event data file
     std::ofstream eventFile("EventData.csv");
 
-    // 写入 CSV 文件头
+    // Write CSV file header
     eventFile << "Time,X,Y\n";
 
-    // 事件触发阈值
+    // Event trigger threshold
     float threshold = 10.0f;
 
     cv::Mat frame, grayFrame, lastGrayFrame, diffFrame, eventImage;
 
-    // 读取第一帧
+    // Read the first frame
     if (!cap.read(frame)) {
-        std::cout << "无法读取视频帧！" << std::endl;
-        
+        std::cout << "Unable to read video frame!" << std::endl;
     }
 
-    // 转换为灰度并转换为浮点型
+    // Convert to grayscale and convert to float type
     cv::cvtColor(frame, grayFrame, cv::COLOR_BGR2GRAY);
     grayFrame.convertTo(lastGrayFrame, CV_32F);
 
-    int frameIndex = 1; // 第一帧已读取
+    int frameIndex = 1; // First frame has been read
     try {
         while (cap.read(frame)) {
-            // 转换为灰度并转换为浮点型
+            // Convert to grayscale and convert to float type
             cv::cvtColor(frame, grayFrame, cv::COLOR_BGR2GRAY);
             cv::Mat currentGrayFrame;
             grayFrame.convertTo(currentGrayFrame, CV_32F);
 
-            // 计算当前帧与上一帧的差异
+            // Calculate the difference between the current frame and the previous frame
             cv::absdiff(currentGrayFrame, lastGrayFrame, diffFrame);
 
-            // 检测事件（像素强度变化超过阈值）
+            // Detect events (pixel intensity changes exceeding the threshold)
             eventImage = cv::Mat::zeros(height, width, CV_8UC1);
             cv::Mat eventMask = diffFrame >= threshold;
             eventImage.setTo(255, eventMask);
 
-            // 使用 findNonZero 获取事件位置
+            // Use findNonZero to get event positions
             std::vector<cv::Point> eventPoints;
             cv::findNonZero(eventMask, eventPoints);
 
-            // 计算当前帧的时间（秒）
+            // Calculate the time of the current frame (seconds)
             float frameTime = frameIndex / static_cast<float>(fps);
 
-            // // 将事件数据写入文件
-             for (const auto& point : eventPoints) {
-                 eventFile << frameTime << "," << point.x << "," << point.y << "\n";
-             }
+            // Write event data to file
+            for (const auto& point : eventPoints) {
+                eventFile << frameTime << "," << point.x << "," << point.y << "\n";
+            }
 
-            // 显示事件图像
-          cv::imshow("Simulated Events", eventImage);
-           cv::waitKey(1);
+            // Display event image
+            cv::imshow("Simulated Events", eventImage);
+            cv::waitKey(1);
 
-            // 写入输出视频
+            // Write to output video
             outputVideo.write(eventImage);
 
-            // 更新 lastGrayFrame
+            // Update lastGrayFrame
             lastGrayFrame = currentGrayFrame.clone();
 
-            // 更新帧索引
+            // Update frame index
             ++frameIndex;
         }
     }
     catch (const std::exception& e) {
-        std::cout << "发生异常：" << e.what() << std::endl;
+        std::cout << "Exception occurred: " << e.what() << std::endl;
     }
     catch (...) {
-        std::cout << "发生未知异常" << std::endl;
+        std::cout << "Unknown exception occurred" << std::endl;
     }
 
-    // 释放资源
+    // Release resources
     cap.release();
     outputVideo.release();
     cv::destroyAllWindows();
     eventFile.close();
-
 
     QString fileName1 = fileName;
     QString fileName2 = "SimulatedEventsOutput.avi";
@@ -174,16 +166,14 @@ void QtWidgetsApplication3::onStartClicked()
         fileName_output.append("SimulatedEventsOutput.avi");
         fileName2 = fileName_output;
     }
-    // 设置媒体源
+    // Set media source
     ui.pushButtonBrowse->setText("1");
     player1->setMedia(QUrl::fromLocalFile(fileName1));
     player2->setMedia(QUrl::fromLocalFile(fileName2));
    
-    // 开始播放
+    // Start playback
     player1->play();
 
-
-
-    // 开始播放
+    // Start playback
     player2->play();
 }
