@@ -13,7 +13,9 @@ class EventCamera : public Camera {
 public:
     // Constructor to initialize the EventCamera with file paths and threshold
     EventCamera(const std::string& videoFilePath, const std::string& outputVideoPath, const std::string& eventDataPath, float threshold = 10.0f);
-    void setFPS(double fps); // Set the frame rate
+    ~EventCamera(); // Destructor
+    void setEventFPS(double _event_fps); // Set the frame rate
+    double getEventFPS() const; // Get the frame rate
 
     // Method to process the video and generate events
     void processVideo();
@@ -26,11 +28,11 @@ private:
     cv::VideoWriter outputVideo;     // Video writer for the output video
     std::ofstream eventFile;         // File stream for the event data file
     float threshold;                 // Threshold for detecting events
-    double event_fps;                      // Frames per second of the video
+    double event_fps;                   // Frames per second of the video
 };
 
 // Constructor implementation
-EventCamera::EventCamera(const std::string& videoFilePath, const std::string& outputVideoPath, const std::string& eventDataPath, float threshold = 10.0f)
+EventCamera::EventCamera(const std::string& videoFilePath, const std::string& outputVideoPath, const std::string& eventDataPath, float threshold)
     : videoFilePath(videoFilePath), outputVideoPath(outputVideoPath), eventDataPath(eventDataPath), threshold(threshold) {
     if (!openVideo(videoFilePath)) {
         throw std::runtime_error("Unable to open video file: " + videoFilePath);
@@ -54,12 +56,36 @@ EventCamera::~EventCamera() {
     std::cout << "Event simulation completed, results saved as " << outputVideoPath << " and " << eventDataPath << std::endl;
 }
 
-void EventCamera::setFPS(double fps) {
-    event_fps = fps;
+/**
+ * @brief Sets the event frames per second (FPS) for the EventCamera.
+ * 
+ * This function allows you to specify the rate at which events are processed
+ * by the EventCamera. The event FPS determines how frequently the camera
+ * captures and processes events.
+ * 
+ * @param _event_fps The desired event frames per second (FPS) value.
+ */
+void EventCamera::setEventFPS(double _event_fps) {
+    event_fps = _event_fps;
+}
+
+/**
+ * @brief Retrieves the frames per second (FPS) for events.
+ * 
+ * This function returns the current event FPS, which indicates the 
+ * rate at which events are processed or captured by the event camera.
+ * 
+ * @return double The current event FPS.
+ */
+double EventCamera::getEventFPS() const {
+    return event_fps;
 }
 
 // Method to process the video and generate events
 void EventCamera::processVideo() {
+    // Define original visualization window
+    cv::namedWindow("Original Frames", cv::WINDOW_NORMAL);
+
     // Define event visualization window
     cv::namedWindow("Simulated Events", cv::WINDOW_NORMAL);
 
@@ -86,6 +112,9 @@ void EventCamera::processVideo() {
     int frameIndex = 1; // First frame already read
     try {
         while (ReadFrameAndUndistort(frame)) {
+            // Display original frame
+            cv::imshow("Original Frames", frame);
+
             // Convert to grayscale and then to float type
             cv::cvtColor(frame, grayFrame, cv::COLOR_BGR2GRAY);
             cv::Mat currentGrayFrame;
@@ -98,7 +127,7 @@ void EventCamera::processVideo() {
             eventImage = cv::Mat::zeros(frameSize, CV_8UC1);
             cv::Mat eventMask = diffFrame >= threshold;
             eventImage.setTo(255, eventMask);
-            cv::Mat eventMask = diffFrame <= -threshold;
+            eventMask = diffFrame <= -threshold;
             eventImage.setTo(128, eventMask);
 
             // Use findNonZero to get event locations
@@ -108,16 +137,17 @@ void EventCamera::processVideo() {
             // Calculate the time of the current frame (seconds)
             double frameTime = static_cast<double>(frameIndex) / event_fps;
 
-            // Write event data to file
-            eventFile << std::fixed << std::setprecision(2);
-            for (const auto& point : eventPoints) {
-                eventFile << frameTime << "," << point.x << "," << point.y << "\n";
-            }
+            // // Write event data to file
+            // eventFile << std::fixed << std::setprecision(2);
+            // for (const auto& point : eventPoints) {
+            //     eventFile << frameTime << "," << point.x << "," << point.y << "\n";
+            // }
 
             // Display event image
             cv::imshow("Simulated Events", eventImage);
-            int delayTime = static_cast<int>(1000 / event_fps);
-            cv::waitKey(delayTime);
+            // int delayTime = static_cast<int>(1000 / event_fps);
+            // cv::waitKey(delayTime);
+            cv::waitKey(1); // minimal delay
 
             // Write to output video
             outputVideo.write(eventImage);

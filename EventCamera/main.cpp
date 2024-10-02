@@ -6,20 +6,20 @@ using namespace std;
 int main(int argc, char** argv) {
     // Check input arguments
     if (argc != 2) {
-        std::cout << "Usage: ./test [video file path]" << std::endl;
+        std::cout << "Usage: ./main [video file path]" << std::endl;
         return -1;
     }
 
     // Create EventCamera object with specified video path, output path, and threshold, then process the video
     std::string videoPath = argv[1];
-    std::string outputPath = "./data/SimulatedEventsOutput.avi";
+    std::string outputPath = "./data/SimulatedEventsOutput.mp4";
     std::string eventDataPath = "./data/EventData.csv";
     float threshold = 10.0; // Example threshold value
-    float fps = 30.0; // Example fps value
+    float event_fps = 300.0; // Example fps value
 
     EventCamera eventCamera(videoPath, outputPath, eventDataPath, threshold);
-    eventCamera.setFPS(fps);
-
+    eventCamera.setEventFPS(event_fps);
+    std::cout << eventCamera.getEventFPS() << std::endl;
     eventCamera.processVideo();
 
     return 0;
