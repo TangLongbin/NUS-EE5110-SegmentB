@@ -1,5 +1,7 @@
+#include <iostream>
+using namespace std;
+
 #include "EventCamera.hpp"
-#include "Camera.hpp"
 
 int main(int argc, char** argv) {
     // Check input arguments
@@ -8,8 +10,16 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    // Create EventCamera object and process the video
-    EventCamera eventCamera(argv[1], "SimulatedEventsOutput.avi", "EventData.csv");
+    // Create EventCamera object with specified video path, output path, and threshold, then process the video
+    std::string videoPath = argv[1];
+    std::string outputPath = "./data/SimulatedEventsOutput.avi";
+    std::string eventDataPath = "./data/EventData.csv";
+    float threshold = 10.0; // Example threshold value
+    float fps = 30.0; // Example fps value
+
+    EventCamera eventCamera(videoPath, outputPath, eventDataPath, threshold);
+    eventCamera.setFPS(fps);
+
     eventCamera.processVideo();
 
     return 0;

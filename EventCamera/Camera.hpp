@@ -16,20 +16,28 @@ using namespace cv;
  * camera parameters.
  */
 class Camera{
+
 private:
     Mat intrinsicParameters;
     Mat distortionCoefficients;
     Mat rotationMatrix;
     Mat translationVector;
+    VideoCapture videoCapture;
+    Size resolution;
+    double fps; // Add a member variable to store the frame rate
 
 public:
     Camera(const Mat& intrinsic, const Mat& distortion, const Mat& rotation, const Mat& translation);
     ~Camera();
-    void undistortImage(const Mat& inputImage, Mat& outputImage) const;
-    void SetIntrinsicParameters(const Mat& intrinsic);
-    void SetDistortionCoefficients(const Mat& distortion);
-    void SetRotationMatrix(const Mat& rotation);
-    void SetTranslationVector(const Mat& translation);
+    void undistortImage(const Mat& inputImage, Mat& outputImage) const; // Undistorts an input image using the camera's intrinsic and distortion parameters.
+    void SetIntrinsicParameters(const Mat& intrinsic); // Sets the intrinsic parameters of the camera.
+    void SetDistortionCoefficients(const Mat& distortion); // Sets the distortion coefficients of the camera.
+    void SetRotationMatrix(const Mat& rotation); // Sets the rotation matrix of the camera.
+    void SetTranslationVector(const Mat& translation); // Sets the translation vector of the camera.
+    bool openVideo(const string& filePath); // Opens a video file and updates the resolution and frame rate.
+    Size getResolution() const; // Gets the resolution of the video.
+    double getFPS() const; // Gets the frame rate of the video.
+    bool ReadFrameAndUndistort(Mat& undistortedFrame); // Gets the next frame from the video, undistorts it, and returns the undistorted frame.
 };
 
 /**
@@ -53,7 +61,11 @@ Camera::Camera(const Mat& intrinsic = Mat::eye(3, 3, CV_64F),
 /**
  * @brief Destroys the Camera object.
  */
-Camera::~Camera(){}
+Camera::~Camera(){
+    if (videoCapture.isOpened()) {
+        videoCapture.release();
+    }
+}
 
 /**
  * @brief Undistorts an input image using the camera's intrinsic and distortion parameters.
@@ -99,6 +111,62 @@ void Camera::SetRotationMatrix(const Mat& rotation){
  */
 void Camera::SetTranslationVector(const Mat& translation){
     translationVector = translation;
+}
+
+/**
+ * @brief Opens a video file and updates the resolution and frame rate.
+ * 
+ * @param filePath The path to the video file.
+ * @return True if the video file was successfully opened, false otherwise.
+ */
+bool Camera::openVideo(const string& filePath) {
+    videoCapture.open(filePath);
+    if (!videoCapture.isOpened()) {
+        cerr << "Error: Could not open video file." << endl;
+        return false;
+    }
+    resolution = Size(static_cast<int>(videoCapture.get(CAP_PROP_FRAME_WIDTH)),
+                      static_cast<int>(videoCapture.get(CAP_PROP_FRAME_HEIGHT)));
+    fps = videoCapture.get(CAP_PROP_FPS); // Get the frame rate
+    return true;
+}
+
+/**
+ * @brief Gets the resolution of the video.
+ * 
+ * @return The resolution of the video.
+ */
+Size Camera::getResolution() const {
+    return resolution;
+}
+
+/**
+ * @brief Gets the frame rate of the video.
+ * 
+ * @return The frame rate of the video.
+ */
+double Camera::getFPS() const {
+    return fps;
+}
+
+/**
+ * @brief Gets the next frame from the video, undistorts it, and returns the undistorted frame.
+ * 
+ * @param undistortedFrame The undistorted frame.
+ * @return True if the frame was successfully read and undistorted, false otherwise.
+ */
+bool Camera::ReadFrameAndUndistort(Mat& undistortedFrame) {
+    Mat frame;
+    if (videoCapture.isOpened()) {
+        videoCapture >> frame;
+        if (frame.empty()) {
+            cerr << "Error: Could not read frame from video." << endl;
+            return false;
+        }
+        undistortImage(frame, undistortedFrame);
+        return true;
+    }
+    return false;
 }
 
 #endif // CAMERA_HPP
