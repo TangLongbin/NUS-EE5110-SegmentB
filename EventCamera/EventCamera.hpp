@@ -90,7 +90,7 @@ void EventCamera::processVideo() {
     cv::namedWindow("Simulated Events", cv::WINDOW_NORMAL);
 
     // Open the output video file
-    outputVideo.open(outputVideoPath, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), event_fps, frameSize, false);
+    outputVideo.open(outputVideoPath, cv::VideoWriter::fourcc('H', '2', '6', '4'), event_fps, frameSize);
 
     if (!outputVideo.isOpened()) {
         std::cout << "Unable to create output video file!" << std::endl;
@@ -100,14 +100,14 @@ void EventCamera::processVideo() {
     cv::Mat frame, grayFrame, lastGrayFrame, diffFrame, eventImage;
     
     // Write CSV file header
-    eventFile << "Time,X,Y\n";
+    eventFile << "Time,X,Y,Event\n";
     
     // Read the first frame
     ReadFrameAndUndistort(frame);
 
     // Convert to grayscale and then to float type
     cv::cvtColor(frame, grayFrame, cv::COLOR_BGR2GRAY);
-    grayFrame.convertTo(lastGrayFrame, CV_32F);
+    grayFrame.convertTo(lastGrayFrame, CV_16SC1);
 
     int frameIndex = 1; // First frame already read
     try {
@@ -118,29 +118,30 @@ void EventCamera::processVideo() {
             // Convert to grayscale and then to float type
             cv::cvtColor(frame, grayFrame, cv::COLOR_BGR2GRAY);
             cv::Mat currentGrayFrame;
-            grayFrame.convertTo(currentGrayFrame, CV_32F);
+            grayFrame.convertTo(currentGrayFrame, CV_16SC1);
 
             // Calculate the difference between the current frame and the last frame
-            cv::absdiff(currentGrayFrame, lastGrayFrame, diffFrame);
+            diffFrame = currentGrayFrame - lastGrayFrame;
 
             // Detect events (pixel intensity changes exceeding the threshold)
-            eventImage = cv::Mat::zeros(frameSize, CV_8UC1);
+            eventImage = cv::Mat::zeros(frameSize, CV_8UC3);
             cv::Mat eventMask = diffFrame >= threshold;
-            eventImage.setTo(255, eventMask);
+            eventImage.setTo(cv::Scalar(0, 0, 255), eventMask); // Red for positive changes
             eventMask = diffFrame <= -threshold;
-            eventImage.setTo(128, eventMask);
+            eventImage.setTo(cv::Scalar(255, 0, 0), eventMask); // Blue for negative changes
 
             // Use findNonZero to get event locations
             std::vector<cv::Point> eventPoints;
+            cv::cvtColor(eventImage, eventMask, cv::COLOR_BGR2GRAY);
             cv::findNonZero(eventMask, eventPoints);
 
             // Calculate the time of the current frame (seconds)
             double frameTime = static_cast<double>(frameIndex) / event_fps;
 
             // // Write event data to file
-            // eventFile << std::fixed << std::setprecision(2);
             // for (const auto& point : eventPoints) {
-            //     eventFile << frameTime << "," << point.x << "," << point.y << "\n";
+            //     int eventValue = eventImage.at<cv::Vec3b>(point)[2] == 255 ? 1 : -1;
+            //     eventFile << frameTime << "," << point.x << "," << point.y << eventValue << "\n";
             // }
 
             // Display event image

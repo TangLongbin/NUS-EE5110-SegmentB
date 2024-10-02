@@ -121,6 +121,7 @@ void Camera::SetTranslationVector(const Mat& translation){
  */
 bool Camera::openVideo(const string& filePath) {
     videoCapture.open(filePath);
+    // videoCapture.open(0); // Use camera device
     if (!videoCapture.isOpened()) {
         cerr << "Error: Could not open video file." << endl;
         return false;
