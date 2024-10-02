@@ -90,7 +90,7 @@ void EventCamera::processVideo() {
     cv::namedWindow("Simulated Events", cv::WINDOW_NORMAL);
 
     // Open the output video file
-    outputVideo.open(outputVideoPath, cv::VideoWriter::fourcc('H', '2', '6', '4'), event_fps, frameSize);
+    outputVideo.open(outputVideoPath, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), event_fps, frameSize);
 
     if (!outputVideo.isOpened()) {
         std::cout << "Unable to create output video file!" << std::endl;

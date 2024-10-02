@@ -13,10 +13,10 @@ int main(int argc, char** argv) {
     // Create EventCamera object with specified video path, output path, and threshold, then process the video
     std::string videoPath = argv[1];
     // std::string videoPath = "./data/123.mp4";
-    std::string outputPath = "./data/SimulatedEventsOutput.mp4";
+    std::string outputPath = "./data/SimulatedEventsOutput.avi";
     std::string eventDataPath = "./data/EventData.csv";
     float threshold = 10.0; // Example threshold value
-    float event_fps = 60.0; // Example fps value
+    float event_fps = 300.0; // Example fps value
 
     EventCamera eventCamera(videoPath, outputPath, eventDataPath, threshold);
     eventCamera.setEventFPS(event_fps);
